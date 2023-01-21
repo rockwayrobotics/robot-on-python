@@ -70,7 +70,7 @@ class MyRobot(wpilib.TimedRobot):
         # TODO: make a class to delegate more cleanly to a joystick configured
         # appropriately for sim or normal mode, so we can use common code here
         if self.sim:
-            self.myRobot.curvatureDrive(dstick.getX(), dstick.getY())
+            self.myRobot.arcadeDrive(dstick.getX() * 0.5, dstick.getY())
         else:
             # matches FRC-2023 5616e35
             self.myRobot.curvatureDrive(-dstick.getLeftY(), dstick.getLeftX())
