@@ -10,9 +10,11 @@ from wpilib.drive import DifferentialDrive
 
 from constants import *
 
+
 class MyRobot(wpilib.TimedRobot):
-    def buildMotors(self):
-        if self.isSimulation():
+    def buildDriveMotors(self):
+        '''Create and return the drive motors for sim or normal mode.'''
+        if self.sim:
             return (
                 wpilib.PWMSparkMax(kLeftMotor1),
                 wpilib.PWMSparkMax(kLeftMotor2),
@@ -29,9 +31,19 @@ class MyRobot(wpilib.TimedRobot):
                 )
 
 
+    def buildDriveStick(self):
+        '''Create and return the drive joystick for sim or normal mode.'''
+        if self.sim:
+            return wpilib.Joystick(0)
+        else:
+            return wpilib.XboxController(kXbox)
+
+
     def robotInit(self):
         """Robot initialization function"""
-        self.left1, self.left2, self.right1, self.right2 = self.buildMotors()
+        self.sim = self.isSimulation()
+
+        self.left1, self.left2, self.right1, self.right2 = self.buildDriveMotors()
 
         self.left = wpilib.MotorControllerGroup(self.left1, self.left2)
         self.right = wpilib.MotorControllerGroup(self.right1, self.right2)
@@ -43,9 +55,7 @@ class MyRobot(wpilib.TimedRobot):
         self.myRobot = DifferentialDrive(self.left, self.right)
         self.myRobot.setExpiration(0.1)
 
-        # joystick 1 is index 0?
-        # self.stick = wpilib.Joystick(0)
-        self.drvStick = wpilib.XboxController(kXbox)
+        self.driveStick = self.buildDriveStick()
 
 
     def teleopInit(self):
@@ -54,8 +64,16 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self):
-        """Runs the motors with X steering (arcade or tank)"""
-        self.myRobot.arcadeDrive(self.drvStick.getX(), -self.drvStick.getY())
+        """Runs the motors with X steering (arcade, tank, curvature)"""
+        dstick = self.driveStick
+
+        # TODO: make a class to delegate more cleanly to a joystick configured
+        # appropriately for sim or normal mode, so we can use common code here
+        if self.sim:
+            self.myRobot.curvatureDrive(dstick.getX(), dstick.getY())
+        else:
+            # matches FRC-2023 5616e35
+            self.myRobot.curvatureDrive(-dstick.getLeftY(), dstick.getLeftX())
 
 
 if __name__ == "__main__":
