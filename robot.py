@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""
-    This is a demo program showing the use of the RobotDrive class,
-    specifically it contains the code necessary to operate a robot with
-    tank drive.
-"""
+"""Experimental RobotPy for FRC 2023."""
 
 import wpilib
 from wpilib.drive import DifferentialDrive
+
+# Note: could move this below so we do it only in normal mode, allowing
+# tests/sim to run faster if they don't require this.
+import rev
 
 from constants import *
 
