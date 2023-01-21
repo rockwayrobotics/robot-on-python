@@ -15,20 +15,10 @@ class MyRobot(wpilib.TimedRobot):
     def buildDriveMotors(self):
         '''Create and return the drive motors for sim or normal mode.'''
         if self.sim:
-            return (
-                wpilib.PWMSparkMax(kLeftMotor1),
-                wpilib.PWMSparkMax(kLeftMotor2),
-                wpilib.PWMSparkMax(kRightMotor1),
-                wpilib.PWMSparkMax(kRightMotor2),
-                )
+            return [wpilib.PWMSparkMax(x) for x in kMotors]
         else:
             brushed = rev.CANSparkMax.MotorType.kBrushed
-            return (
-                rev.CANSparkMax(kLeftMotor1, brushed),
-                rev.CANSparkMax(kLeftMotor2, brushed),
-                rev.CANSparkMax(kRightMotor1, brushed),
-                rev.CANSparkMax(kRightMotor2, brushed),
-                )
+            return [rev.CANSparkMax(x, brushed) for x in kMotors]
 
 
     def buildDriveStick(self):
