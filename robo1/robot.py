@@ -4,9 +4,7 @@
 import ntcore
 
 import wpilib
-# import wpilib.deployinfo
 from wpilib.drive import DifferentialDrive
-# from wpilib import deployinfo
 
 # Note: could move this below so we do it only in normal mode, allowing
 # tests/sim to run faster if they don't require this.
@@ -15,8 +13,10 @@ import rev
 from constants import *
 
 DASH = wpilib.SmartDashboard
+DS = wpilib.DriverStation
 
 ARCADE = True
+BREAK = False
 
 class MyRobot(wpilib.TimedRobot):
     state = 'init'
@@ -69,7 +69,7 @@ class MyRobot(wpilib.TimedRobot):
 
         print(f'stick: {self.driveStick.isConnected()}')
 
-        # if self.sim:
+        # if BREAK and self.sim:
         #     breakpoint()
 
 
@@ -93,6 +93,9 @@ class MyRobot(wpilib.TimedRobot):
             DASH.putString('xbox', text)
         else:
             DASH.putString('xbox', 'missing')
+
+        DASH.putNumber('batt', DS.getBatteryVoltage())
+        DASH.putString('alliance', 'blue' if DS.getAlliance() else 'red')
 
 
     def robotPeriodic(self):
@@ -161,7 +164,6 @@ class MyRobot(wpilib.TimedRobot):
             next(self.phase)
         except StopIteration:
             self.myRobot.arcadeDrive(0, 0)
-            # breakpoint()
 
 
     def teleopInit(self):
@@ -177,8 +179,6 @@ class MyRobot(wpilib.TimedRobot):
 
         print(f'stick: {self.driveStick.isConnected()}')
 
-        # if self.sim:
-        #     breakpoint()
 
     def teleopExit(self):
         self.state = 'between'
@@ -211,6 +211,10 @@ class MyRobot(wpilib.TimedRobot):
     def testInit(self):
         self.state = 'test'
 
+        if BREAK and self.sim:
+            breakpoint()
+
+
     def testExit(self):
         self.state = 'between'
 
@@ -228,6 +232,11 @@ def git_desc():
 if __name__ == "__main__":
     DEPLOY_INFO = wpilib.deployinfo.getDeployData() or {
         'git-desc': git_desc(),
-        }
+    }
+
+    import sys
+    if '--break' in sys.argv:
+        BREAK = True
+        sys.argv.remove('--break')
 
     wpilib.run(MyRobot)

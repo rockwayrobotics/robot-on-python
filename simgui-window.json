@@ -6,7 +6,7 @@
       "style": "0",
       "userScale": "2",
       "width": "992",
-      "xpos": "341",
+      "xpos": "339",
       "ypos": "31"
     }
   },
@@ -28,7 +28,7 @@
     },
     "###Joysticks": {
       "Collapsed": "0",
-      "Pos": "139,421",
+      "Pos": "140,423",
       "Size": "796,183"
     },
     "###Keyboard 0 Settings": {
@@ -58,8 +58,8 @@
     },
     "###RoboRIO": {
       "Collapsed": "0",
-      "Pos": "7,418",
-      "Size": "119,146"
+      "Pos": "134,145",
+      "Size": "193,192"
     },
     "###System Joysticks": {
       "Collapsed": "0",
