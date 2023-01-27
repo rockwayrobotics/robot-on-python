@@ -1,5 +1,5 @@
-Robot on Python
-===============
+# Robot on Python
+
 Robot implementation using RobotPy.  [Start here.](https://robotpy.readthedocs.io/en/latest/getting_started.html)
 
 In short:
@@ -21,4 +21,25 @@ In short:
 6.  If you want the code to run at robot boot time, see
     [this link](https://robotpy.readthedocs.io/en/latest/guide/deploy.html#starting-deployed-code-at-boot).
 
-More to come...
+
+## API Basics
+
+### Joysticks
+
+Joystick axis readings range between -1.0 and 1.0.
+Generally forward is Y negative, backward is Y positive.
+Left is X negative, right is X positive.
+Joysticks may have a twist axis, or others e.g. a throttle
+or a sensitivity axis.
+
+The axes are associated with channels, which can be queried
+or set.  The defaults are e.g. kDefaultThrottleChannel.
+
+Buttons include a trigger button (usually index finger),
+a "top" button (thumb), and possibly many others.
+
+The API provides routines to read the current state, e.g. `getTop()`
+and also some stateful values such as `getTopPressed()` or
+`getTopReleased()` which apparently return True only once, when
+first called following the pressing or releasing of the button.
+

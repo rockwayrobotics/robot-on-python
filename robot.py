@@ -4,7 +4,9 @@
 import ntcore
 
 import wpilib
+# import wpilib.deployinfo
 from wpilib.drive import DifferentialDrive
+# from wpilib import deployinfo
 
 # Note: could move this below so we do it only in normal mode, allowing
 # tests/sim to run faster if they don't require this.
@@ -12,6 +14,9 @@ import rev
 
 from constants import *
 
+DASH = wpilib.SmartDashboard
+
+ARCADE = True
 
 class MyRobot(wpilib.TimedRobot):
     state = 'init'
@@ -56,11 +61,9 @@ class MyRobot(wpilib.TimedRobot):
 
         self.accel = wpilib.BuiltInAccelerometer()
 
-        # self.dash = ntcore.NetworkTableInstance.getDefault().getTable("SmartDashboard")
-        self.dash = wpilib.SmartDashboard
-
         self.ds = wpilib.DSControlWord()
         # print('ds attached', self.ds.isDSAttached())
+        DASH.putString('git', DEPLOY_INFO.get('git-desc', 'missing'))
 
         # self.updateDashboard()
 
@@ -71,26 +74,25 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def updateDashboard(self):
-        dash = wpilib.SmartDashboard
-        dash.putString('State', self.state)
-        # dash.putBoolean('Disabled?', self.state == 'disabled')
-        # dash.putBoolean('Autonomous?', self.state == 'auto')
-        # dash.putBoolean('Teleop?', self.state == 'teleop')
+        DASH.putString('State', self.state)
+        # DASH.putBoolean('Disabled?', self.state == 'disabled')
+        # DASH.putBoolean('Autonomous?', self.state == 'auto')
+        # DASH.putBoolean('Teleop?', self.state == 'teleop')
 
         axes = ','.join(f'{k}={v:.2f}' for k,v in zip('xyz', (self.accel.getX(), self.accel.getY(), self.accel.getX())))
-        dash.putString('accel', axes)
+        DASH.putString('accel', axes)
 
         if self.simStick.isConnected():
             text = f'x={self.simStick.getX():.2f} y={self.simStick.getY():.2f}'
-            dash.putString('joy', text)
+            DASH.putString('joy', text)
         else:
-            dash.putString('joy', 'missing')
+            DASH.putString('joy', 'missing')
 
         if self.driveStick.isConnected():
             text = f'x={self.driveStick.getLeftX():.2f} y={self.driveStick.getLeftY():.2f}'
-            dash.putString('xbox', text)
+            DASH.putString('xbox', text)
         else:
-            dash.putString('xbox', 'missing')
+            DASH.putString('xbox', 'missing')
 
 
     def robotPeriodic(self):
@@ -171,7 +173,7 @@ class MyRobot(wpilib.TimedRobot):
         if data:
             # Set the robot gamedata property and set a network tables value
             self.gameData = data
-            self.dash.putString("gameData", self.gameData)
+            DASH.putString("gameData", self.gameData)
 
         print(f'stick: {self.driveStick.isConnected()}')
 
@@ -189,9 +191,19 @@ class MyRobot(wpilib.TimedRobot):
         # TODO: make a class to delegate more cleanly to a joystick configured
         # appropriately for sim or normal mode, so we can use common code here
         if self.sim:
-            self.myRobot.curvatureDrive(self.simStick.getX() * 0.4, self.simStick.getY(), True)
-            # self.myRobot.arcadeDrive(self.simStick.getX() * 0.5, self.simStick.getY())
-            # self.myRobot.curvatureDrive(-dstick.getLeftY(), dstick.getLeftX(), False)
+            dstick = self.simStick
+            if ARCADE:
+                speed_scale = 0.7 if dstick.getTrigger() else 1.0
+                rot_scale = 0.4 if dstick.getTrigger() else 0.6
+                # True mean square inputs (higher sensitivity at low values)
+                self.myRobot.arcadeDrive(dstick.getX() * rot_scale, dstick.getY() * speed_scale, True)
+            else:
+                speed_scale = 0.3 if dstick.getTrigger() else 1.0
+                rot_scale = 0.4 if dstick.getTrigger() else 0.3
+                # True means allow turn in place
+                self.myRobot.curvatureDrive(
+                    dstick.getX() * rot_scale, dstick.getY() * speed_scale, True)
+
         else:
             self.myRobot.curvatureDrive(dstick.getLeftX(), dstick.getLeftY(), True)
 
@@ -203,5 +215,19 @@ class MyRobot(wpilib.TimedRobot):
         self.state = 'between'
 
 
+def git_desc():
+    '''Get the git description e.g. branchX-12df1a1-dirty'''
+    try:
+        import subprocess as subp
+        desc = subp.getoutput('git describe --always --dirty')
+    except Exception:
+        desc = '(git?)'
+    return desc
+
+
 if __name__ == "__main__":
+    DEPLOY_INFO = wpilib.deployinfo.getDeployData() or {
+        'git-desc': git_desc(),
+        }
+
     wpilib.run(MyRobot)

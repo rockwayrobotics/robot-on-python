@@ -11,3 +11,14 @@ kMotors = (kLeftMotor1, kLeftMotor2, kRightMotor1, kRightMotor2)
 # XBox
 kXbox = 0
 kSimStick = 1
+
+# Joystick buttons
+# <ButtonType.kTriggerButton: 0>
+# <ButtonType.kTopButton: 1>
+
+# Axis types
+# <AxisType.kThrottleAxis: 4>
+# <AxisType.kTwistAxis: 3>
+# <AxisType.kXAxis: 0>  negative left?
+# <AxisType.kYAxis: 1>  negative forward?
+# <AxisType.kZAxis: 2>  twist, on Logitech Extreme 3D Pro
