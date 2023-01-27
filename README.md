@@ -43,3 +43,25 @@ and also some stateful values such as `getTopPressed()` or
 `getTopReleased()` which apparently return True only once, when
 first called following the pressing or releasing of the button.
 
+The wpilib.DriverStation API provides a few things to query
+the currently attached controllers.  Note that it appears that
+attaching a joystick while the code is running may not be
+visible without a restart, at least based on running in the simulator.
+
+DS.isJoystickAttached(n)
+DS.getJoystickName(n) e.g. 'Logitech Extreme 3D' or 'Keyboard 0'
+DS.getJoystickType(n) is useful in theory but in the sim at least
+    returns 0 for everything.
+DS.getLocation() returns 1, 2, 3 for position of driver station in the field.
+DS.getAlliance() returns DS.Alliance.kRed/kBlue/kInvalid (0/1/2)
+DS.getMatchTime() may be useful in helping control end-of-period
+    autonomous routines, possibly cutting them short if there's not
+    enough time for a fancier version...
+    Note that it's documented as being not guaranteed to be accurate
+    so there may be a better way to do this.
+DS.getStickAxisCount(n) returns a count, 3 for sim keyboard, 4 for Logitech 3D
+DS.getStickButtonCount() also works, 4 for sim kb, 12 for L3D
+DS.isDSAttached() may be useful, though note that it's True for the sim
+    as well (though sim can toggle it).  Presumably most useful in
+    judging whether these other APIs are going to return useful data,
+    and maybe ones like the wpilib.Joystick and similar controller stuff.
