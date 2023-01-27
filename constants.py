@@ -10,3 +10,4 @@ kMotors = (kLeftMotor1, kLeftMotor2, kRightMotor1, kRightMotor2)
 
 # XBox
 kXbox = 0
+kSimStick = 1

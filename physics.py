@@ -42,6 +42,8 @@ class PhysicsEngine:
 
         # self.motor = wpilib.simulation.PWMSim(robot.motor.getChannel())
 
+        self.accel = wpilib.simulation.BuiltInAccelerometerSim()
+
         # Gyro
         # self.gyro = wpilib.simulation.AnalogGyroSim(robot.gyro)
 
