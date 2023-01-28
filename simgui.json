@@ -1,5 +1,10 @@
 {
   "HALProvider": {
+    "DIO": {
+      "window": {
+        "visible": true
+      }
+    },
     "RoboRIO": {
       "RoboRIO Input": {
         "open": true
@@ -10,6 +15,9 @@
     "types": {
       "/FMSInfo": "FMSInfo",
       "/LiveWindow/Ungrouped/DifferentialDrive[1]": "DifferentialDrive",
+      "/LiveWindow/Ungrouped/DigitalInput[4]": "Digital Input",
+      "/LiveWindow/Ungrouped/DigitalInput[5]": "Digital Input",
+      "/LiveWindow/Ungrouped/DigitalInput[6]": "Digital Input",
       "/LiveWindow/Ungrouped/PWMSparkMax[1]": "Motor Controller",
       "/LiveWindow/Ungrouped/PWMSparkMax[2]": "Motor Controller",
       "/LiveWindow/Ungrouped/PWMSparkMax[3]": "Motor Controller",
@@ -25,8 +33,10 @@
     }
   },
   "NetworkTables": {
-    "Retained Values": {
-      "open": false
+    "persistent": {
+      "Preferences": {
+        "open": true
+      }
     },
     "transitory": {
       "SmartDashboard": {

@@ -1,19 +1,22 @@
 #!/usr/bin/env python3
 """Experimental RobotPy for FRC 2023."""
 
-import ntcore
+# import ntcore
 
 import wpilib
 from wpilib.drive import DifferentialDrive
+from wpilib.shuffleboard import Shuffleboard
 
 # Note: could move this below so we do it only in normal mode, allowing
 # tests/sim to run faster if they don't require this.
+import ctre
 import rev
 
 from constants import *
 
 DASH = wpilib.SmartDashboard
 DS = wpilib.DriverStation
+PREFS = wpilib.Preferences
 
 ARCADE = True
 BREAK = False
@@ -27,7 +30,13 @@ class MyRobot(wpilib.TimedRobot):
             return [wpilib.PWMSparkMax(x) for x in kMotors]
         else:
             brushed = rev.CANSparkMax.MotorType.kBrushed
-            return [rev.CANSparkMax(x, brushed) for x in kMotors]
+            # (kLeftMotor1, kLeftMotor2, kRightMotor1, kRightMotor2)
+            left1 = ctre.WPI_VictorSPX(kLeftMotor1)
+            right1 = ctre.WPI_VictorSPX(kRightMotor1)
+            right1.setInverted(True)
+            left2 = rev.CANSparkMax(kLeftMotor2, brushed)
+            right2 = rev.CANSparkMax(kRightMotor2, brushed)
+            return (left1, left2, right1, right2)
 
 
     def buildStick(self, sim=False):
@@ -52,9 +61,11 @@ class MyRobot(wpilib.TimedRobot):
         # # This was in 2022
         # self.left.setInverted(True)
         # self.right.setInverted(True)
+        self.dio4 = wpilib.DigitalInput(4)
+        self.dio5 = wpilib.DigitalInput(5)
 
-        self.myRobot = DifferentialDrive(self.left, self.right)
-        # self.myRobot.setExpiration(0.1)
+        self.drive = DifferentialDrive(self.left, self.right)
+        # self.drive.setExpiration(0.1)
 
         self.simStick = self.buildStick(sim=True)
         self.driveStick = self.buildStick()
@@ -65,19 +76,23 @@ class MyRobot(wpilib.TimedRobot):
         # print('ds attached', self.ds.isDSAttached())
         DASH.putString('git', DEPLOY_INFO.get('git-desc', 'missing'))
 
-        # self.updateDashboard()
+        # rotation of the RIO, specified as:
+        # 0 = X forward (Y left)
+        # 90 = X left (Y back)
+        # 180 = X back (Y right)
+        # 270 = X right (Y forward)
+        # S/N 32363BD has X forward, other one has X left
+        PREFS.initInt('rio_rotation', 0)
+
+        # smartTab = Shuffleboard.getTab("Foobar")
+        # smartTab.add(title='DIO 5', defaultValue=self.dio4)
+        # smartTab.add(title="Potentiometer", defaultValue=self.elevatorPot)
 
         print(f'stick: {self.driveStick.isConnected()}')
-
-        # if BREAK and self.sim:
-        #     breakpoint()
 
 
     def updateDashboard(self):
         DASH.putString('State', self.state)
-        # DASH.putBoolean('Disabled?', self.state == 'disabled')
-        # DASH.putBoolean('Autonomous?', self.state == 'auto')
-        # DASH.putBoolean('Teleop?', self.state == 'teleop')
 
         axes = ','.join(f'{k}={v:.2f}' for k,v in zip('xyz', (self.accel.getX(), self.accel.getY(), self.accel.getX())))
         DASH.putString('accel', axes)
@@ -95,7 +110,10 @@ class MyRobot(wpilib.TimedRobot):
             DASH.putString('xbox', 'missing')
 
         DASH.putNumber('batt', DS.getBatteryVoltage())
-        DASH.putString('alliance', 'blue' if DS.getAlliance() else 'red')
+        # DASH.putString('alliance', 'blue' if DS.getAlliance() else 'red')
+
+        DASH.putBoolean('DIO 5', self.dio4.get())
+        DASH.putBoolean('DIO 6', self.dio5.get())
 
 
     def robotPeriodic(self):
@@ -105,18 +123,18 @@ class MyRobot(wpilib.TimedRobot):
     def disabledInit(self):
         self.state = 'disabled'
         print('state: disabled')
-        self.myRobot.arcadeDrive(0, 0)
+        self.drive.arcadeDrive(0, 0)
 
 
     # def disabledPeriodic(self):
-    #     self.updateDashboard()
+    #     pass
 
 
     def autonomousInit(self):
         self.state = 'auto'
         print('state: auto')
         if not self.sim:
-            self.myRobot.setSafetyEnabled(True)
+            self.drive.setSafetyEnabled(True)
         self.phase = self.run_phases()
 
         print(f'stick: {self.driveStick.isConnected()}')
@@ -135,11 +153,11 @@ class MyRobot(wpilib.TimedRobot):
         (5.0, 'back_right'),
         ]
 
-    def _phase_initial(self):       self.myRobot.arcadeDrive(0, 0)
-    def _phase_curve_out(self):     self.myRobot.arcadeDrive(-0.1, -0.7)
-    def _phase_pivot_left(self):    self.myRobot.arcadeDrive(-0.3, -0.5)
-    def _phase_straight(self):      self.myRobot.arcadeDrive(0, -0.80)
-    def _phase_back_right(self):    self.myRobot.arcadeDrive(-0.2, 0.6)
+    def _phase_initial(self):       self.drive.arcadeDrive(0, 0)
+    def _phase_curve_out(self):     self.drive.arcadeDrive(-0.1, -0.7)
+    def _phase_pivot_left(self):    self.drive.arcadeDrive(-0.3, -0.5)
+    def _phase_straight(self):      self.drive.arcadeDrive(0, -0.80)
+    def _phase_back_right(self):    self.drive.arcadeDrive(-0.2, 0.6)
 
     def run_phases(self):
         self._phase = 0
@@ -163,19 +181,19 @@ class MyRobot(wpilib.TimedRobot):
         try:
             next(self.phase)
         except StopIteration:
-            self.myRobot.arcadeDrive(0, 0)
+            self.drive.arcadeDrive(0, 0)
 
 
     def teleopInit(self):
         self.state = 'teleop'
         print('state: teleop')
-        self.myRobot.setSafetyEnabled(not self.sim)
+        self.drive.setSafetyEnabled(not self.sim)
         # self.logger.info('batt: %s', self.getBatteryVoltage())
-        data = wpilib.DriverStation.getGameSpecificMessage()
-        if data:
-            # Set the robot gamedata property and set a network tables value
-            self.gameData = data
-            DASH.putString("gameData", self.gameData)
+        # data = wpilib.DriverStation.getGameSpecificMessage()
+        # if data:
+        #     # Set the robot gamedata property and set a network tables value
+        #     self.gameData = data
+        #     DASH.putString("gameData", self.gameData)
 
         print(f'stick: {self.driveStick.isConnected()}')
 
@@ -186,8 +204,6 @@ class MyRobot(wpilib.TimedRobot):
 
     def teleopPeriodic(self):
         """Runs the motors with X steering (arcade, tank, curvature)"""
-        dstick = self.driveStick
-
         # TODO: make a class to delegate more cleanly to a joystick configured
         # appropriately for sim or normal mode, so we can use common code here
         if self.sim:
@@ -196,16 +212,18 @@ class MyRobot(wpilib.TimedRobot):
                 speed_scale = 0.7 if dstick.getTrigger() else 1.0
                 rot_scale = 0.4 if dstick.getTrigger() else 0.6
                 # True mean square inputs (higher sensitivity at low values)
-                self.myRobot.arcadeDrive(dstick.getX() * rot_scale, dstick.getY() * speed_scale, True)
+                self.drive.arcadeDrive(dstick.getX() * rot_scale, dstick.getY() * speed_scale, True)
             else:
+
                 speed_scale = 0.3 if dstick.getTrigger() else 1.0
                 rot_scale = 0.4 if dstick.getTrigger() else 0.3
                 # True means allow turn in place
-                self.myRobot.curvatureDrive(
+                self.drive.curvatureDrive(
                     dstick.getX() * rot_scale, dstick.getY() * speed_scale, True)
 
         else:
-            self.myRobot.curvatureDrive(dstick.getLeftX(), dstick.getLeftY(), True)
+            dstick = self.driveStick
+            self.drive.curvatureDrive(-dstick.getLeftY() * 0.5, dstick.getLeftX() * 0.5, True)
 
 
     def testInit(self):

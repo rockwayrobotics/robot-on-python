@@ -8,6 +8,12 @@ kRightMotor2 = 4
 
 kMotors = (kLeftMotor1, kLeftMotor2, kRightMotor1, kRightMotor2)
 
+# from FRC-2023 PhotonVision-Testing branch
+kLeftEncoder1 = 0
+kLeftEncoder2 = 1
+kRightEncoder1 = 2
+kRightEncoder2 = 3
+
 # XBox
 kXbox = 0
 kSimStick = 1

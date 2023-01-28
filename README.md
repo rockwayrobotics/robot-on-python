@@ -65,3 +65,11 @@ DS.isDSAttached() may be useful, though note that it's True for the sim
     as well (though sim can toggle it).  Presumably most useful in
     judging whether these other APIs are going to return useful data,
     and maybe ones like the wpilib.Joystick and similar controller stuff.
+
+
+### DigitalInputs
+
+`di = wpilib.DigitalInput(n)` gets a channel 0-9 (on the RIO) or 10-25 (MXP).
+`di.get()` returns boolean with current state.
+Simulation: setSimDevice(n) ... not sure how the interface with simulated
+stuff works yet.

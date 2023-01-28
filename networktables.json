@@ -1,0 +1,10 @@
+[
+  {
+    "name": "/Preferences/rio_rotation",
+    "type": "int",
+    "value": 90,
+    "properties": {
+      "persistent": true
+    }
+  }
+]
