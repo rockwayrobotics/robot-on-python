@@ -18,8 +18,55 @@ DASH = wpilib.SmartDashboard
 DS = wpilib.DriverStation
 PREFS = wpilib.Preferences
 
-ARCADE = True
+DRIVE = 'curvature'
 BREAK = False
+
+
+# In simulation, for some reason we currently have to negate the
+# rotation argument for both of these drive types. This hot-patches
+# the drive instance to replace both methods with ones that
+# call the original methods with the rotation negated.
+# see https://robotpy.readthedocs.io/projects/wpilib/en/stable/wpilib.drive/DifferentialDrive.html
+# Normally you'd just hot-patch one or two methods, but the
+# class involved is "sealed" or something to prevent doing so, which is why
+# I've had to implement every one and delegate to the original in such a
+# cumbersome manner. There is a way to do this automatically but it's a
+# wee bit of work, so leaving that till some other time...
+class SimDrive:
+    def __init__(self, drive):
+        self.drive = drive
+
+    # From class MotorSafety
+    def check(self): return self.drive.check()
+    def checkMotors(self, *args, **kwargs): return self.drive.checkMotors(*args, **kwargs)
+    def feed(self, *args, **kwargs): return self.drive.feed(*args, **kwargs)
+    def getDescription(self): return self.drive.getDescription()
+    def getExpiration(self, *args, **kwargs): return self.drive.getExpiration(*args, **kwargs)
+    def isAlive(self): return self.drive.isAlive()
+    def isSafetyEnabled(self): return self.drive.isSafetyEnabled()
+    def setExpiration(self, *args, **kwargs): return self.drive.setExpiration(*args, **kwargs)
+    def setSafetyEnabled(self, x): return self.drive.setSafetyEnabled(x)
+    def stopMotor(self): return self.drive.stopMotor()
+
+    # from class RobotDriveBase
+    MotorType = DifferentialDrive.MotorType
+    def feedWatchdog(self, *args, **kwargs): return self.drive.feedWatchdog(*args, **kwargs)
+    def setDeadband(self, *args, **kwargs): return self.drive.setDeadband(*args, **kwargs)
+    def setMaxOutput(self, x): return self.drive.setMaxOutput(x)
+
+    # from class DifferentialDrive
+    WheelSpeeds = DifferentialDrive.WheelSpeeds
+    def arcadeDrive(self, v, r, sqi=True): return self.drive.arcadeDrive(v, -r, sqi)
+    def curvatureDrive(self, v, r, tip=True): return self.drive.curvatureDrive(v, -r, tip)
+    def initSendable(self, *args, **kwargs): return self.drive.initSendable(*args, **kwargs)
+    def tankDrive(self, lv, rv, sqi=True): return self.drive.tankDrive(lv, rv, sqi)
+    def tankDriveIK(self, lv, rv, sqi=True): return self.drive.tankDriveIK(lv, rv, sqi)
+    # These are untested, and I don't know exactly what they do, so I'm not sure
+    # whether or not we should also be negating rotation here. Doing so for now.
+    def arcadeDriveIK(self, v, r, sqi=True): return self.drive.arcadeDriveIK(v, -r, sqi)
+    def curvatureDriveIK(self, v, r, tip=True): return self.drive.curvatureDriveIK(v, -r, tip)
+
+
 
 class MyRobot(wpilib.TimedRobot):
     state = 'init'
@@ -27,16 +74,32 @@ class MyRobot(wpilib.TimedRobot):
     def buildDriveMotors(self):
         '''Create and return the drive motors for sim or normal mode.'''
         if self.sim:
-            return [wpilib.PWMSparkMax(x) for x in kMotors]
+            left1 = wpilib.PWMSparkMax(kLeftMotor1)
+            left2 = wpilib.PWMSparkMax(kLeftMotor2)
+            right1 = wpilib.PWMSparkMax(kRightMotor1)
+            right2 = wpilib.PWMSparkMax(kRightMotor2)
         else:
             brushed = rev.CANSparkMax.MotorType.kBrushed
-            # (kLeftMotor1, kLeftMotor2, kRightMotor1, kRightMotor2)
+
+            # TODO: make this auto-configure based on Rio serial number,
+            # MAC address, or other identifier, based on which types of
+            # controller are in which drive base.  Currently the 2022 robot
+            # has WPI_VictorSPX as the rear motors, and CANSparkMax as
+            # the front ones (at least, that's what the FRC-2023 code shows,
+            # but the wiring suggests the Victors are the front ones).
+            # The 2023 drive base has all four as CANSparkMax ... as of now.
             left1 = ctre.WPI_VictorSPX(kLeftMotor1)
-            right1 = ctre.WPI_VictorSPX(kRightMotor1)
-            right1.setInverted(True)
             left2 = rev.CANSparkMax(kLeftMotor2, brushed)
+
+            right1 = ctre.WPI_VictorSPX(kRightMotor1)
+            # Currently this was necesary on the old drive base to resolve
+            # the two right motors fighting against each other... we have
+            # not checked the wiring or otherwise tried to find the root cause.
+            right1.setInverted(True)
+
             right2 = rev.CANSparkMax(kRightMotor2, brushed)
-            return (left1, left2, right1, right2)
+
+        return (left1, left2, right1, right2)
 
 
     def buildStick(self, sim=False):
@@ -53,19 +116,21 @@ class MyRobot(wpilib.TimedRobot):
         """Robot initialization function"""
         self.sim = self.isSimulation()
 
+        # need these stored so the simulation can find them (physics.py)
         self.left1, self.left2, self.right1, self.right2 = self.buildDriveMotors()
 
         self.left = wpilib.MotorControllerGroup(self.left1, self.left2)
         self.right = wpilib.MotorControllerGroup(self.right1, self.right2)
 
-        # # This was in 2022
-        # self.left.setInverted(True)
-        # self.right.setInverted(True)
         self.dio4 = wpilib.DigitalInput(4)
         self.dio5 = wpilib.DigitalInput(5)
 
         self.drive = DifferentialDrive(self.left, self.right)
         # self.drive.setExpiration(0.1)
+
+        # Fix simulation by negating rotation parameter... see SimDrive above
+        if self.sim:
+            self.drive = SimDrive(self.drive)
 
         self.simStick = self.buildStick(sim=True)
         self.driveStick = self.buildStick()
@@ -87,8 +152,6 @@ class MyRobot(wpilib.TimedRobot):
         # smartTab = Shuffleboard.getTab("Foobar")
         # smartTab.add(title='DIO 5', defaultValue=self.dio4)
         # smartTab.add(title="Potentiometer", defaultValue=self.elevatorPot)
-
-        print(f'stick: {self.driveStick.isConnected()}')
 
 
     def updateDashboard(self):
@@ -126,8 +189,8 @@ class MyRobot(wpilib.TimedRobot):
         self.drive.arcadeDrive(0, 0)
 
 
-    # def disabledPeriodic(self):
-    #     pass
+    def disabledPeriodic(self):
+        pass
 
 
     def autonomousInit(self):
@@ -136,8 +199,6 @@ class MyRobot(wpilib.TimedRobot):
         if not self.sim:
             self.drive.setSafetyEnabled(True)
         self.phase = self.run_phases()
-
-        print(f'stick: {self.driveStick.isConnected()}')
 
 
     def autonomousExit(self):
@@ -153,11 +214,11 @@ class MyRobot(wpilib.TimedRobot):
         (5.0, 'back_right'),
         ]
 
-    def _phase_initial(self):       self.drive.arcadeDrive(0, 0)
-    def _phase_curve_out(self):     self.drive.arcadeDrive(-0.1, -0.7)
-    def _phase_pivot_left(self):    self.drive.arcadeDrive(-0.3, -0.5)
-    def _phase_straight(self):      self.drive.arcadeDrive(0, -0.80)
-    def _phase_back_right(self):    self.drive.arcadeDrive(-0.2, 0.6)
+    def _phase_initial(self):       self.drive.arcadeDrive( 0.00,  0.00)
+    def _phase_curve_out(self):     self.drive.arcadeDrive( 0.70, -0.10)
+    def _phase_pivot_left(self):    self.drive.arcadeDrive( 0.30, -0.50)
+    def _phase_straight(self):      self.drive.arcadeDrive( 0.80,  0.00)
+    def _phase_back_right(self):    self.drive.arcadeDrive(-0.60, -0.20)
 
     def run_phases(self):
         self._phase = 0
@@ -188,14 +249,6 @@ class MyRobot(wpilib.TimedRobot):
         self.state = 'teleop'
         print('state: teleop')
         self.drive.setSafetyEnabled(not self.sim)
-        # self.logger.info('batt: %s', self.getBatteryVoltage())
-        # data = wpilib.DriverStation.getGameSpecificMessage()
-        # if data:
-        #     # Set the robot gamedata property and set a network tables value
-        #     self.gameData = data
-        #     DASH.putString("gameData", self.gameData)
-
-        print(f'stick: {self.driveStick.isConnected()}')
 
 
     def teleopExit(self):
@@ -203,27 +256,27 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def teleopPeriodic(self):
-        """Runs the motors with X steering (arcade, tank, curvature)"""
+        '''Runs the motors with X steering (arcade, tank, curvature)'''
         # TODO: make a class to delegate more cleanly to a joystick configured
         # appropriately for sim or normal mode, so we can use common code here
-        if self.sim:
-            dstick = self.simStick
-            if ARCADE:
-                speed_scale = 0.7 if dstick.getTrigger() else 1.0
-                rot_scale = 0.4 if dstick.getTrigger() else 0.6
-                # True mean square inputs (higher sensitivity at low values)
-                self.drive.arcadeDrive(dstick.getX() * rot_scale, dstick.getY() * speed_scale, True)
-            else:
+        dstick = self.simStick
+        speed_scale = 0.7 if dstick.getTrigger() else 1.0
+        rot_scale = 0.4 if dstick.getTrigger() else 0.3
 
-                speed_scale = 0.3 if dstick.getTrigger() else 1.0
-                rot_scale = 0.4 if dstick.getTrigger() else 0.3
-                # True means allow turn in place
-                self.drive.curvatureDrive(
-                    dstick.getX() * rot_scale, dstick.getY() * speed_scale, True)
+        if DRIVE == 'arcade':
+            # if dstick.getTop():
+            #     breakpoint()
+            # last arg True mean square inputs (higher sensitivity at low values)
+            self.drive.arcadeDrive(-dstick.getY() * speed_scale, dstick.getX() * rot_scale)
 
-        else:
-            dstick = self.driveStick
-            self.drive.curvatureDrive(-dstick.getLeftY() * 0.5, dstick.getLeftX() * 0.5, True)
+        elif DRIVE == 'curvature':
+            # last arg True means allow turn in place
+            self.drive.curvatureDrive(
+                -dstick.getY() * speed_scale, dstick.getX() * rot_scale, True)
+
+        elif DRIVE == 'tank':
+            self.drive.tankDrive(
+                -dstick.getLeftY() * speed_scale, dstick.getRightY() * speed_scale)
 
 
     def testInit(self):

@@ -1,13 +1,13 @@
 {
   "MainWindow": {
     "GLOBAL": {
-      "height": "696",
+      "height": "781",
       "maximized": "0",
       "style": "0",
       "userScale": "2",
-      "width": "992",
-      "xpos": "364",
-      "ypos": "45"
+      "width": "1048",
+      "xpos": "706",
+      "ypos": "205"
     }
   },
   "Window": {
@@ -33,8 +33,8 @@
     },
     "###Joysticks": {
       "Collapsed": "0",
-      "Pos": "164,497",
-      "Size": "796,183"
+      "Pos": "196,526",
+      "Size": "796,155"
     },
     "###Keyboard 0 Settings": {
       "Collapsed": "0",

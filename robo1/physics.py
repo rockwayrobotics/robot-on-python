@@ -12,13 +12,15 @@
 import wpilib.simulation
 
 from pyfrc.physics.core import PhysicsInterface
-from pyfrc.physics import motor_cfgs, tankmodel
+from pyfrc.physics import motor_cfgs, tankmodel, drivetrains
 from pyfrc.physics.units import units
 
 import typing
 
 if typing.TYPE_CHECKING:
     from robot import MyRobot
+
+USE_TANK_MODEL = True
 
 
 class PhysicsEngine:
@@ -33,8 +35,10 @@ class PhysicsEngine:
         self.physics_controller = physics_controller
 
         # Motors
-        self.l_motor = wpilib.simulation.PWMSim(robot.left1.getChannel())
-        self.r_motor = wpilib.simulation.PWMSim(robot.right1.getChannel())
+        self.l1 = wpilib.simulation.PWMSim(robot.left1.getChannel())
+        self.r1 = wpilib.simulation.PWMSim(robot.right1.getChannel())
+        self.l2 = wpilib.simulation.PWMSim(robot.left2.getChannel())
+        self.r2 = wpilib.simulation.PWMSim(robot.right2.getChannel())
 
         # self.dio1 = wpilib.simulation.DIOSim(robot.limit1)
         # self.dio2 = wpilib.simulation.DIOSim(robot.limit2)
@@ -52,18 +56,30 @@ class PhysicsEngine:
         # Change these parameters to fit your robot!
         bumper_width = 3.25 * units.inch
 
-        # fmt: off
-        self.drivetrain = tankmodel.TankModel.theory(
-            motor_cfgs.MOTOR_CFG_CIM,           # motor configuration
-            110 * units.lbs,                    # robot mass
-            10.71,                              # drivetrain gear ratio
-            2,                                  # motors per side
-            22 * units.inch,                    # robot wheelbase
-            23 * units.inch + bumper_width * 2, # robot width
-            32 * units.inch + bumper_width * 2, # robot length
-            6 * units.inch,                     # wheel diameter
-        )
-        # fmt: on
+        if USE_TANK_MODEL:
+            self.drivetrain = tankmodel.TankModel.theory(
+                motor_cfgs.MOTOR_CFG_CIM,           # motor configuration
+                110 * units.lbs,                    # robot mass
+                10.71,                              # drivetrain gear ratio
+                2,                                  # motors per side
+                22 * units.inch,                    # robot wheelbase
+                23 * units.inch + bumper_width * 2, # robot width
+                32 * units.inch + bumper_width * 2, # robot length
+                6 * units.inch,                     # wheel diameter
+            )
+        else:
+            # not well tested and doesn't seem to implement momentum
+            # as the TankModel does, and besides that it basically
+            # has the same behaviour in terms of inversion of one side
+            # relative to the real robot, maybe
+            self.drivetrain = drivetrains.FourMotorDrivetrain(
+                x_wheelbase = 22 * units.inch,
+                speed = 2 * units.meter_per_second,
+                deadzone = drivetrains.linear_deadzone(0.2)
+                )
+
+
+    _prevt = _prevp = 0
 
     def update_sim(self, now: float, tm_diff: float) -> None:
         """
@@ -76,11 +92,26 @@ class PhysicsEngine:
         """
 
         # Simulate the drivetrain
-        l_motor = self.l_motor.getSpeed()
-        r_motor = self.r_motor.getSpeed()
+        l1 = self.l1.getSpeed()
+        l2 = self.l2.getSpeed()
+        r1 = -self.r1.getSpeed()
+        r2 = -self.r2.getSpeed()
+        assert l1 == l2
+        assert r1 == r2
 
-        transform = self.drivetrain.calculate(l_motor, r_motor, tm_diff)
-        pose = self.physics_controller.move_robot(transform)
+        if USE_TANK_MODEL:
+            transform = self.drivetrain.calculate(l1, r2, tm_diff)
+            pose = self.physics_controller.move_robot(transform)
+
+        else:
+            speeds = self.drivetrain.calculate(l1, l2, r1, r2)
+            pose = self.physics_controller.drive(speeds, tm_diff)
+
+        # pt = f'\tl={l1:.1f} r={r1:.1f} x={pose.x:4.1f} y={pose.y:4.1f} rot={pose.rotation().degrees():.0f}'
+        # if pt != self._prevp and now - self._prevt > 0.5:
+        #     self._prevt = now
+        #     self._prevp = pt
+        #     print(pt)
 
         # # Update the gyro simulation
         # # -> FRC gyros are positive clockwise, but the returned pose is positive
