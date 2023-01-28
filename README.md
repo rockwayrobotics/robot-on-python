@@ -21,6 +21,13 @@ In short:
 6.  If you want the code to run at robot boot time, see
     [this link](https://robotpy.readthedocs.io/en/latest/guide/deploy.html#starting-deployed-code-at-boot).
 
+Note that none of this installs RobotPy on the robot itself.  To do that
+follow [Robot Installation](https://robotpy.readthedocs.io/en/stable/install/robot.html)
+and note also that unless you use `robotpy_installer install robotpy[all]` you
+will have to install various third-party vendor packages separately.  For
+example if you need `import rev` you'll want to do `robotpy_install install robotpy[rev]`
+and so on.  See also [Package notes](https://robotpy.readthedocs.io/en/stable/install/index.html#package-notes).
+
 
 ## API Basics
 
