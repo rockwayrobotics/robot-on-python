@@ -80,6 +80,9 @@ class MyRobot(wpilib.TimedRobot):
             right2 = wpilib.PWMSparkMax(kRightMotor2)
         else:
             brushed = rev.CANSparkMax.MotorType.kBrushed
+            # TODO: for the 2023 drive base we'll currently have
+            # four *kBrushless* CANSparkMax motors, per
+            # https://github.com/rockwayrobotics/FRC-2023/commit/f9c2bc2#diff-8a9b484
 
             # TODO: make this auto-configure based on Rio serial number,
             # MAC address, or other identifier, based on which types of
@@ -208,17 +211,23 @@ class MyRobot(wpilib.TimedRobot):
     # crude substitute for Command stuff
     PHASES = [
         (1.0, 'initial'),
-        (4.0, 'curve_out'),
+        (3.0, 'curve_out'),
         (1.1, 'pivot_left'),
-        (2.5, 'straight'),
-        (5.0, 'back_right'),
+        (1.5, 'straight'),
+        (3.1, 'back_right'),
+        (1.8, 'zoom'),
+        (2.4, 'curve_in'),
+        (2.2, 'realign'),
         ]
 
-    def _phase_initial(self):       self.drive.arcadeDrive( 0.00,  0.00)
-    def _phase_curve_out(self):     self.drive.arcadeDrive( 0.70, -0.10)
-    def _phase_pivot_left(self):    self.drive.arcadeDrive( 0.30, -0.50)
-    def _phase_straight(self):      self.drive.arcadeDrive( 0.80,  0.00)
-    def _phase_back_right(self):    self.drive.arcadeDrive(-0.60, -0.20)
+    def _phase_initial(self):       self.drive.arcadeDrive( 0.00,  0.00, False)
+    def _phase_curve_out(self):     self.drive.arcadeDrive( 0.80, -0.03, False)
+    def _phase_pivot_left(self):    self.drive.arcadeDrive( 0.50, -0.15, False)
+    def _phase_straight(self):      self.drive.arcadeDrive( 1.00,  0.00, False)
+    def _phase_back_right(self):    self.drive.arcadeDrive(-0.50, -0.04, False)
+    def _phase_zoom(self):          self.drive.arcadeDrive( 1.00,  0.00, False)
+    def _phase_curve_in(self):      self.drive.arcadeDrive( 0.50, -0.05, False)
+    def _phase_realign(self):       self.drive.arcadeDrive( 0.00,  0.25, False)
 
     def run_phases(self):
         self._phase = 0
