@@ -29,8 +29,8 @@ SIMCAM = dict(
     camDiagFOV = 170,     # Diagonal Field of View of the camera used.
     cameraToRobot = C.cam1ToRobot,# Transform to move from the camera's mount position to robot.
     maxLEDRange = 9000,   # docs say use 9000 on cameras without LEDs
-    cameraResWidth = 480, # Width of your camera's image sensor in pixels
-    cameraResHeight = 360,# Height of your camera's image sensor in pixels
+    cameraResWidth = 640, # Width of your camera's image sensor in pixels
+    cameraResHeight = 480,# Height of your camera's image sensor in pixels
     minTargetArea = 10,   # Minimum area for recognized targets in pixels
     # TODO: verify that this is total pixels in the blob, not 50x50 pixels
     )

@@ -198,7 +198,7 @@ class MyRobot(wpilib.TimedRobot):
     def updateDashboard(self):
         DASH.putString('State', self.state)
 
-        axes = (self.accel.getX(), self.accel.getY(), self.accel.getX())
+        axes = [self.accel.getX(), self.accel.getY(), self.accel.getX()]
         # axes = ','.join(f'{k}={v:.2f}' for k,v in zip('xyz', axes))
         # DASH.putString('accel', axes)
         DASH.putNumberArray('accel', axes)
