@@ -1,18 +1,29 @@
 #!/usr/bin/env python3
 """Experimental RobotPy for FRC 2023."""
 
+# import warnings
+# warnings.filterwarnings('ignore')
+
 # import ntcore
 
 import wpilib
 from wpilib.drive import DifferentialDrive
 from wpilib.shuffleboard import Shuffleboard
 
+from wpimath.geometry import Pose2d, Pose3d
+
+from pyfrc.physics.units import units
+
 # Note: could move this below so we do it only in normal mode, allowing
 # tests/sim to run faster if they don't require this.
 import ctre
 import rev
+import photonvision as pv
+import robotpy_apriltag as at
 
-from constants import *
+from constants import * # original code used this... get rid of it
+import constants as C   # this is the better way... less namespace pollution
+
 
 DASH = wpilib.SmartDashboard
 DS = wpilib.DriverStation
@@ -115,9 +126,36 @@ class MyRobot(wpilib.TimedRobot):
             return wpilib.XboxController(kXbox)
 
 
+    def setupVision(self):
+        # shared with physics... TODO: make util modules for such things
+        layout = at.loadAprilTagLayoutField(at.AprilTagField.k2023ChargedUp)
+
+        self.cam1 = pv.PhotonCamera(C.cam1Name)
+        self.cam1.setVersionCheckEnabled(False)
+
+        # Python doesn't have ArrayLists, so pybind makes us provide the last param as such.
+        self.poseEstimator = pv.RobotPoseEstimator(
+            layout,
+            pv.PoseStrategy.CLOSEST_TO_REFERENCE_POSE,
+            [(self.cam1, C.cam1ToRobot)],
+        )
+
+        # for i in range(1, 9):
+        #     pose = layout.getTagPose(i)
+            # tag.setPose(pose.toPose2d())
+
+
+    def getEstimatedGlobalPose(self, prevEstimate: Pose3d):
+        self.poseEstimator.setReferencePose(Pose3d(pose=prevEstimate.toPose2d()))
+        return self.poseEstimator.update()
+
+
     def robotInit(self):
         """Robot initialization function"""
         self.sim = self.isSimulation()
+
+        self.setupVision()
+        self.globalPose = Pose3d()
 
         # need these stored so the simulation can find them (physics.py)
         self.left1, self.left2, self.right1, self.right2 = self.buildDriveMotors()
@@ -160,8 +198,10 @@ class MyRobot(wpilib.TimedRobot):
     def updateDashboard(self):
         DASH.putString('State', self.state)
 
-        axes = ','.join(f'{k}={v:.2f}' for k,v in zip('xyz', (self.accel.getX(), self.accel.getY(), self.accel.getX())))
-        DASH.putString('accel', axes)
+        axes = (self.accel.getX(), self.accel.getY(), self.accel.getX())
+        # axes = ','.join(f'{k}={v:.2f}' for k,v in zip('xyz', axes))
+        # DASH.putString('accel', axes)
+        DASH.putNumberArray('accel', axes)
 
         if self.simStick.isConnected():
             text = f'x={self.simStick.getX():.2f} y={self.simStick.getY():.2f}'
@@ -178,8 +218,20 @@ class MyRobot(wpilib.TimedRobot):
         DASH.putNumber('batt', DS.getBatteryVoltage())
         # DASH.putString('alliance', 'blue' if DS.getAlliance() else 'red')
 
-        DASH.putBoolean('DIO 5', self.dio4.get())
-        DASH.putBoolean('DIO 6', self.dio5.get())
+        DASH.putBoolean('DIO 4', self.dio4.get())
+        DASH.putBoolean('DIO 5', self.dio5.get())
+
+        # with warnings.catch_warnings():
+        #     warnings.simplefilter('ignore')
+        if True:
+            try:
+                pose, latency = self.getEstimatedGlobalPose(self.globalPose)
+                if True: #pose != self.globalPose:
+                    self.globalPose = pose
+                    DASH.putString('pose', f'{pose.x:.2f},{pose.y:.2f} {pose.rotation().z_degrees:.0f}')
+                    DASH.putNumber('latency', latency)
+            except Exception as ex:
+                print(ex)
 
 
     def robotPeriodic(self):

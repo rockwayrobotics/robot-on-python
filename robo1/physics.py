@@ -9,18 +9,31 @@
 # of your robot code without too much extra effort.
 #
 
+from wpimath.geometry import Transform3d as T3D
 import wpilib.simulation
+
+import photonvision as pv
+import robotpy_apriltag as at
 
 from pyfrc.physics.core import PhysicsInterface
 from pyfrc.physics import motor_cfgs, tankmodel, drivetrains
 from pyfrc.physics.units import units
 
-import typing
-
-if typing.TYPE_CHECKING:
-    from robot import MyRobot
+import constants as C
 
 USE_TANK_MODEL = True
+
+
+SIMCAM = dict(
+    camName = C.cam1Name, # Name of the PhotonVision camera to create.
+    camDiagFOV = 170,     # Diagonal Field of View of the camera used.
+    cameraToRobot = C.cam1ToRobot,# Transform to move from the camera's mount position to robot.
+    maxLEDRange = 9000,   # docs say use 9000 on cameras without LEDs
+    cameraResWidth = 480, # Width of your camera's image sensor in pixels
+    cameraResHeight = 360,# Height of your camera's image sensor in pixels
+    minTargetArea = 10,   # Minimum area for recognized targets in pixels
+    # TODO: verify that this is total pixels in the blob, not 50x50 pixels
+    )
 
 
 class PhysicsEngine:
@@ -32,7 +45,22 @@ class PhysicsEngine:
 
     def __init__(self, physics_controller: PhysicsInterface, robot: "MyRobot"):
 
-        self.physics_controller = physics_controller
+        global P
+        P = self    # for easier inspection via python prompt
+
+        self.physics = physics_controller
+
+        self.cam1 = pv.SimVisionSystem(**SIMCAM)
+
+        layout = at.loadAprilTagLayoutField(at.AprilTagField.k2023ChargedUp)
+        for i in range(1, 9):
+            pose = layout.getTagPose(i)
+            tag = self.physics.field.getObject(f'tag{i}')
+            tag.setPose(pose.toPose2d())
+
+            target = pv.SimVisionTarget(pose, C.tagsize.m, C.tagsize.m, i)
+            self.cam1.addSimVisionTarget(target)
+            # breakpoint()
 
         # Motors
         self.l1 = wpilib.simulation.PWMSim(robot.left1.getChannel())
@@ -96,16 +124,18 @@ class PhysicsEngine:
         l2 = self.l2.getSpeed()
         r1 = -self.r1.getSpeed()
         r2 = -self.r2.getSpeed()
-        assert l1 == l2
-        assert r1 == r2
+        # assert l1 == l2
+        # assert r1 == r2
 
         if USE_TANK_MODEL:
             transform = self.drivetrain.calculate(l1, r2, tm_diff)
-            pose = self.physics_controller.move_robot(transform)
+            pose = self.physics.move_robot(transform)
 
         else:
             speeds = self.drivetrain.calculate(l1, l2, r1, r2)
-            pose = self.physics_controller.drive(speeds, tm_diff)
+            pose = self.physics.drive(speeds, tm_diff)
+
+        self.cam1.processFrame(self.physics.get_pose())
 
         # pt = f'\tl={l1:.1f} r={r1:.1f} x={pose.x:4.1f} y={pose.y:4.1f} rot={pose.rotation().degrees():.0f}'
         # if pt != self._prevp and now - self._prevt > 0.5:

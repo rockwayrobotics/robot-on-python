@@ -1,4 +1,7 @@
 
+from wpimath.geometry import Transform3d, Translation3d, Rotation3d, Pose3d
+from pyfrc.physics.units import units
+
 
 # from 2022 drive base
 kLeftMotor1 = 1
@@ -28,3 +31,16 @@ kSimStick = 1
 # <AxisType.kXAxis: 0>  negative left?
 # <AxisType.kYAxis: 1>  negative forward?
 # <AxisType.kZAxis: 2>  twist, on Logitech Extreme 3D Pro
+
+cam1Name = 'camera'
+cam1Pitch = 37 * units.degree
+cam1OffsetY = 4 * units.inch
+cam1Height = 6 * units.inch
+cam1Trans = Translation3d(0, cam1OffsetY.m_as(units.m), cam1Height.m_as(units.m))
+cam1Rot = Rotation3d(0, cam1Pitch, 0)
+# transform camera pose to robot pose
+cam1ToRobot = Transform3d(cam1Trans, cam1Rot)
+
+# Apriltags
+tagsize = (6.0 * units.inch).to(units.m)
+
