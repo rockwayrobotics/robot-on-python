@@ -27,7 +27,7 @@ print(f'{cfg.decodeSharpening=} {cfg.numThreads=} {cfg.quadDecimate=} {cfg.quadS
 #debug', 'decodeSharpening', 'numThreads', 'quadDecimate', 'quadSigma', 'refineEdges']
 
 cfg.quadDecimate = 2
-cfg.numThreads = 4
+cfg.numThreads = 2
 det.setConfig(cfg)
 
 now = start = time.time()
