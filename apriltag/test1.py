@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import math
 import time
 
 import robotpy_apriltag as at
@@ -7,9 +8,12 @@ import robotpy_apriltag as at
 from libcamera import Transform
 import picamera2
 
+degrees = lambda rad: rad * 180 / math.pi
+
 cam = picamera2.Picamera2()
 
 SIZE = (320, 240)
+#SIZE = (240, 128)
 still1 = cam.create_still_configuration(
     main=dict(size=SIZE, format='YUV420'),
     controls=dict(FrameRate=200), # FrameDurationLimits=(1, 5000)),
@@ -17,17 +21,20 @@ still1 = cam.create_still_configuration(
     transform=Transform(hflip=1, vflip=1),
     )
 
+cam.align_configuration(still1)
+print('Cam config:\n%s' % '\n'.join(f'{x:>15} = {y}' for x, y in still1.items()))
 cam.configure(still1)
 cam.start()
 
 det = at.AprilTagDetector()
 det.addFamily('tag16h5', bitsCorrected=0)
 cfg = det.getConfig()
-print(f'{cfg.decodeSharpening=} {cfg.numThreads=} {cfg.quadDecimate=} {cfg.quadSigma=} {cfg.refineEdges=} {cfg.debug=}')
-#debug', 'decodeSharpening', 'numThreads', 'quadDecimate', 'quadSigma', 'refineEdges']
-
 cfg.quadDecimate = 2
 cfg.numThreads = 2
+print(f'Apriltags:\n\t{cfg.decodeSharpening=} {cfg.numThreads=} {cfg.quadDecimate=}\n\t{cfg.quadSigma=} {cfg.refineEdges=} {cfg.debug=}')
+q = det.getQuadThresholdParameters()
+print(f'Quad Threshold:\n\t{degrees(q.criticalAngle)=} {q.deglitch=} {q.maxLineFitMSE=} {q.maxNumMaxima=} {q.minClusterPixels=} {q.minWhiteBlackDiff=}')
+
 det.setConfig(cfg)
 
 now = start = time.time()
@@ -35,12 +42,14 @@ reported = start
 count = 0
 fps = 0
 found = False
+height = SIZE[0] * 2 // 3
 while now - start < 30:
-    img = cam.capture_array()[:SIZE[1],:] # not sure value correct for other sizes
+    arr = cam.capture_array()
+    img = arr[:height,:]
     tags = det.detect(img)
     count += 1
     now = time.time()
-    if now - reported > 3:
+    if now - reported > 1:
         fps = count / (now - reported)
         reported = now
         count = 0
