@@ -23,7 +23,11 @@ cam.start()
 det = at.AprilTagDetector()
 det.addFamily('tag16h5', bitsCorrected=0)
 cfg = det.getConfig()
+print(f'{cfg.decodeSharpening=} {cfg.numThreads=} {cfg.quadDecimate=} {cfg.quadSigma=} {cfg.refineEdges=} {cfg.debug=}')
+#debug', 'decodeSharpening', 'numThreads', 'quadDecimate', 'quadSigma', 'refineEdges']
+
 cfg.quadDecimate = 2
+cfg.numThreads = 4
 det.setConfig(cfg)
 
 now = start = time.time()
