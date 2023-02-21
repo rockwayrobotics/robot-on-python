@@ -24,6 +24,15 @@ BREAK = False
 class MyRobot(wpilib.TimedRobot):
     state = 'init'
 
+
+    def buildEncoders(self):
+        enc1 = wpilib.Encoder(kLeftEncoder1, kLeftEncoder2)
+        enc1.setDistancePerPulse(DISTANCE_PER_ENCODER_PULSE)
+        enc2 = wpilib.Encoder(kRightEncoder1, kRightEncoder2)
+        enc2.setDistancePerPulse(-DISTANCE_PER_ENCODER_PULSE)
+        return (enc1, enc2)
+
+
     def buildDriveMotors(self):
         '''Create and return the drive motors for sim or normal mode.'''
         if self.sim:
@@ -43,16 +52,18 @@ class MyRobot(wpilib.TimedRobot):
         '''Routine create a control device.  This allows us to
         substitute a simulated one when appropriate, etc.  The current
         code doesn't really do that.'''
-        if sim:
-            return wpilib.Joystick(kSimStick)
-        else:
-            return wpilib.XboxController(kXbox)
+        # if sim:
+        # return wpilib.Joystick(kSimStick)
+        return wpilib.XboxController(kXbox)
+        # else:
+            # return wpilib.XboxController(kXbox)
 
 
     def robotInit(self):
         """Robot initialization function"""
         self.sim = self.isSimulation()
 
+        self.enc1, self.enc2 = self.buildEncoders()
         self.left1, self.left2, self.right1, self.right2 = self.buildDriveMotors()
 
         self.left = wpilib.MotorControllerGroup(self.left1, self.left2)
@@ -67,7 +78,7 @@ class MyRobot(wpilib.TimedRobot):
         self.drive = DifferentialDrive(self.left, self.right)
         # self.drive.setExpiration(0.1)
 
-        self.simStick = self.buildStick(sim=True)
+        # self.simStick = self.buildStick(sim=True)
         self.driveStick = self.buildStick()
 
         self.accel = wpilib.BuiltInAccelerometer()
@@ -97,23 +108,27 @@ class MyRobot(wpilib.TimedRobot):
         axes = ','.join(f'{k}={v:.2f}' for k,v in zip('xyz', (self.accel.getX(), self.accel.getY(), self.accel.getX())))
         DASH.putString('accel', axes)
 
-        if self.simStick.isConnected():
-            text = f'x={self.simStick.getX():.2f} y={self.simStick.getY():.2f}'
-            DASH.putString('joy', text)
-        else:
-            DASH.putString('joy', 'missing')
+        # if self.simStick.isConnected():
+        #     text = f'x={self.simStick.getX():.2f} y={self.simStick.getY():.2f}'
+        #     DASH.putString('joy', text)
+        # else:
+        #     DASH.putString('joy', 'missing')
 
-        if self.driveStick.isConnected():
-            text = f'x={self.driveStick.getLeftX():.2f} y={self.driveStick.getLeftY():.2f}'
-            DASH.putString('xbox', text)
-        else:
-            DASH.putString('xbox', 'missing')
+        # if self.driveStick.isConnected():
+        #     # text = f'x={self.driveStick.getLeftX():.2f} y={self.driveStick.getLeftY():.2f}'
+        #     text = f'x={self.driveStick.getX():.2f} y={self.driveStick.getY():.2f}'
+        #     DASH.putString('xbox', text)
+        # else:
+        #     DASH.putString('xbox', 'missing')
 
         DASH.putNumber('batt', DS.getBatteryVoltage())
         # DASH.putString('alliance', 'blue' if DS.getAlliance() else 'red')
 
         DASH.putBoolean('DIO 5', self.dio4.get())
         DASH.putBoolean('DIO 6', self.dio5.get())
+
+        DASH.putNumber('ENC1', self.enc1.getRate())
+        DASH.putNumber('ENC2', self.enc2.getRate())
 
 
     def robotPeriodic(self):
@@ -206,24 +221,26 @@ class MyRobot(wpilib.TimedRobot):
         """Runs the motors with X steering (arcade, tank, curvature)"""
         # TODO: make a class to delegate more cleanly to a joystick configured
         # appropriately for sim or normal mode, so we can use common code here
-        if self.sim:
-            dstick = self.simStick
-            if ARCADE:
-                speed_scale = 0.7 if dstick.getTrigger() else 1.0
-                rot_scale = 0.4 if dstick.getTrigger() else 0.6
-                # True mean square inputs (higher sensitivity at low values)
-                self.drive.arcadeDrive(dstick.getX() * rot_scale, dstick.getY() * speed_scale, True)
-            else:
+        # if self.sim:
+        #     dstick = self.simStick
+        #     if ARCADE:
+        dstick = self.driveStick
+        speed_scale = 0.7 if dstick.getRightBumper() else 1.0
+        rot_scale = 0.0 if dstick.getRightBumper() else 0.6
+        # True mean square inputs (higher sensitivity at low values)
+        self.drive.arcadeDrive(-dstick.getRightY() * speed_scale,
+            -dstick.getRightX() * rot_scale, False)
+        #     else:
 
-                speed_scale = 0.3 if dstick.getTrigger() else 1.0
-                rot_scale = 0.4 if dstick.getTrigger() else 0.3
-                # True means allow turn in place
-                self.drive.curvatureDrive(
-                    dstick.getX() * rot_scale, dstick.getY() * speed_scale, True)
+        #         speed_scale = 0.3 if dstick.getTrigger() else 1.0
+        #         rot_scale = 0.4 if dstick.getTrigger() else 0.3
+        #         # True means allow turn in place
+        #         self.drive.curvatureDrive(
+        #             dstick.getX() * rot_scale, dstick.getY() * speed_scale, True)
 
-        else:
-            dstick = self.driveStick
-            self.drive.curvatureDrive(-dstick.getLeftY() * 0.5, dstick.getLeftX() * 0.5, True)
+        # else:
+        #     dstick = self.driveStick
+        #     self.drive.curvatureDrive(-dstick.getLeftY() * 0.5, dstick.getLeftX() * 0.5, True)
 
 
     def testInit(self):

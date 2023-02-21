@@ -2,12 +2,12 @@
   "MainWindow": {
     "GLOBAL": {
       "height": "696",
-      "maximized": "0",
+      "maximized": "1",
       "style": "0",
       "userScale": "2",
       "width": "992",
-      "xpos": "364",
-      "ypos": "45"
+      "xpos": "0",
+      "ypos": "23"
     }
   },
   "Window": {
@@ -18,13 +18,13 @@
     },
     "###/SmartDashboard/Field": {
       "Collapsed": "0",
-      "Pos": "198,54",
+      "Pos": "207,54",
       "Size": "767,390"
     },
     "###DIO": {
       "Collapsed": "0",
       "Pos": "5,165",
-      "Size": "162,77"
+      "Size": "162,169"
     },
     "###FMS": {
       "Collapsed": "0",
@@ -33,8 +33,8 @@
     },
     "###Joysticks": {
       "Collapsed": "0",
-      "Pos": "164,497",
-      "Size": "796,183"
+      "Pos": "172,507",
+      "Size": "796,155"
     },
     "###Keyboard 0 Settings": {
       "Collapsed": "0",

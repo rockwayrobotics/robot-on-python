@@ -1,4 +1,4 @@
-
+import math
 
 # from 2022 drive base
 kLeftMotor1 = 1
@@ -13,6 +13,10 @@ kLeftEncoder1 = 0
 kLeftEncoder2 = 1
 kRightEncoder1 = 2
 kRightEncoder2 = 3
+
+ENCODER_PULSES_PER_REVOLUTION = 360
+WHEEL_DIAMETER = 6
+DISTANCE_PER_ENCODER_PULSE = WHEEL_DIAMETER * math.pi / ENCODER_PULSES_PER_REVOLUTION
 
 # XBox
 kXbox = 0
