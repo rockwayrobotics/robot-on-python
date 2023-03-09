@@ -1,12 +1,12 @@
 import math
 
 # from 2022 drive base
-kLeftMotor1 = 1
-kLeftMotor2 = 2
-kRightMotor1 = 3
-kRightMotor2 = 4
+kLeftRear = 1     # VictorSPX
+kLeftFront = 2     # CANSparkMax (inverted)
+kRightRear = 3    # VictorSPX (inverted)
+kRightFront = 4    # CANSparkMax
 
-kMotors = (kLeftMotor1, kLeftMotor2, kRightMotor1, kRightMotor2)
+kMotors = (kLeftFront, kLeftRear, kRightFront, kRightRear)
 
 # from FRC-2023 PhotonVision-Testing branch
 kLeftEncoder1 = 0
