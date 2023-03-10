@@ -137,7 +137,7 @@ class MyRobot(wpilib.TimedRobot):
         self.poseEstimator = pv.RobotPoseEstimator(
             layout,
             pv.PoseStrategy.CLOSEST_TO_REFERENCE_POSE,
-            [(self.cam1, C.cam1ToRobot)],
+            [(self.cam1, C.robotToCam1)],
         )
 
         # for i in range(1, 9):

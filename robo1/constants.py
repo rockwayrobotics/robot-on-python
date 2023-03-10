@@ -39,7 +39,7 @@ cam1Height = 6 * units.inch
 cam1Trans = Translation3d(0, cam1OffsetY.m_as(units.m), cam1Height.m_as(units.m))
 cam1Rot = Rotation3d(0, cam1Pitch, 0)
 # transform camera pose to robot pose
-cam1ToRobot = Transform3d(cam1Trans, cam1Rot)
+robotToCam1 = Transform3d(cam1Trans, cam1Rot)
 
 # Apriltags
 tagsize = (6.0 * units.inch).to(units.m)

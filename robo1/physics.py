@@ -27,7 +27,7 @@ USE_TANK_MODEL = True
 SIMCAM = dict(
     camName = C.cam1Name, # Name of the PhotonVision camera to create.
     camDiagFOV = 170,     # Diagonal Field of View of the camera used.
-    cameraToRobot = C.cam1ToRobot,# Transform to move from the camera's mount position to robot.
+    cameraToRobot = C.robotToCam1.inverse(),# Transform to move from the camera's mount position to robot.
     maxLEDRange = 9000,   # docs say use 9000 on cameras without LEDs
     cameraResWidth = 640, # Width of your camera's image sensor in pixels
     cameraResHeight = 480,# Height of your camera's image sensor in pixels
@@ -60,7 +60,7 @@ class PhysicsEngine:
 
             target = pv.SimVisionTarget(pose, C.tagsize.m, C.tagsize.m, i)
             self.cam1.addSimVisionTarget(target)
-            # breakpoint()
+            print(i, pose)
 
         # Motors
         self.l1 = wpilib.simulation.PWMSim(robot.left1.getChannel())
