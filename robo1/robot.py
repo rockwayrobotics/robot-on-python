@@ -71,6 +71,7 @@ class Controllers:
         self.log = logging.getLogger('ctrl')
         self.hid0 = GenericHID(0)
         self._name0 = None  # force initial change even if nothing attached
+        self.reset()
         self.check()
 
     def isConnected(self):
@@ -158,6 +159,11 @@ class MyRobot(wpilib.TimedRobot):
 
             lf = rev.CANSparkMax(kLeftFront, brushed)
             rf = rev.CANSparkMax(kRightFront, brushed)
+
+            # mode = rev.CANSparkMax.IdleMode.kBrake
+            mode = rev.CANSparkMax.IdleMode.kCoast
+            lf.setIdleMode(mode)
+            rf.setIdleMode(mode)
 
         # TODO: make this auto-configure based on Rio serial number,
         # MAC address, or other identifier, based on which types of
@@ -298,7 +304,12 @@ class MyRobot(wpilib.TimedRobot):
         here as it's probably a good idea in general.'''
         while True:
             DASH.putString('State', self.state)
-            axes = ','.join(f'{k}={v:.2f}' for k,v in zip('xyz', (self.accel.getX(), self.accel.getY(), self.accel.getX())))
+
+            # Igneous: raw axes, each is positive when pointed up.
+            # X--[Z]   X is facing left.
+            #     |    Y is facing back/rear.
+            #     Y    Z is facing up.
+            axes = ','.join(f'{k}={v:.2f}' for k,v in zip('xyz', (self.accel.getX(), self.accel.getY(), self.accel.getZ())))
             DASH.putString('accel', axes)
             yield 2
 
@@ -319,6 +330,10 @@ class MyRobot(wpilib.TimedRobot):
             DASH.putNumber('batt', DS.getBatteryVoltage())
             DASH.putBoolean('DIO 5', self.dio4.get())
             DASH.putBoolean('DIO 6', self.dio5.get())
+
+            # When shown as a graph in ShuffleBoard, right is red (usually?)
+            # and does show positive/higher than left when we're turning
+            # left, as you would expect.
             DASH.putNumberArray('Encoders', [self.el.getRate(), self.er.getRate()])
             yield 8
 
@@ -429,7 +444,7 @@ class MyRobot(wpilib.TimedRobot):
         (2.3, 'back_right'),
         (1.0, 'zoom'),
         (3.2, 'curve_in'),
-        (2.5, 'realign'),
+        (2.0, 'realign'),
         (2.0, 'backup'),
         ]
 
@@ -443,7 +458,7 @@ class MyRobot(wpilib.TimedRobot):
     def _phase_straight(self):      self.arcadeDrive( 1.00,  0.00)
     def _phase_back_right(self):    self.arcadeDrive(-0.50,  0.08)
     def _phase_zoom(self):          self.arcadeDrive( 1.00,  0.00)
-    def _phase_curve_in(self):      self.arcadeDrive( 0.90,  0.12)
+    def _phase_curve_in(self):      self.arcadeDrive( 0.90,  0.10)
     def _phase_realign(self):       self.arcadeDrive( 0.07, -0.40)
     def _phase_backup(self):        self.arcadeDrive(-0.25,  0.00)
 
