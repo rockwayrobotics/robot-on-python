@@ -211,11 +211,21 @@ class MyRobot(wpilib.TimedRobot):
 
 
     def buildEncoders(self):
-        enc1 = wpilib.Encoder(kLeftEncoder1, kLeftEncoder2)
-        enc1.setDistancePerPulse(DISTANCE_PER_ENCODER_PULSE)
-        enc2 = wpilib.Encoder(kRightEncoder1, kRightEncoder2)
-        enc2.setDistancePerPulse(-DISTANCE_PER_ENCODER_PULSE)
-        return (enc2, enc1)
+        '''These encoders are connected to the DIO pins.
+        Each encoder (if wired consistently with the 2023
+        drive bases) has four pins as follows: black is ground,
+        orange is VCC (+5V power), while blue and yellow are
+        the two signal wires.  They should be connected preferably
+        to adjacent DIO pins, black/orange/yellow on the lower-
+        numbered port, and blue on the other one.  If connected
+        properly forward rotation of the motors on one side
+        will result in positive values for the rate reported
+        by the encoders.'''
+        encl = wpilib.Encoder(kLeftEncoder1, kLeftEncoder2)
+        encl.setDistancePerPulse(DISTANCE_PER_ENCODER_PULSE)
+        encr = wpilib.Encoder(kRightEncoder1, kRightEncoder2)
+        encr.setDistancePerPulse(-DISTANCE_PER_ENCODER_PULSE)
+        return (encl, encr)
 
 
     def robotInit(self):
@@ -329,8 +339,16 @@ class MyRobot(wpilib.TimedRobot):
             yield 3
 
             DASH.putNumber('batt', DS.getBatteryVoltage())
-            DASH.putBoolean('DIO 5', self.dio4.get())
-            DASH.putBoolean('DIO 6', self.dio5.get())
+
+            # The limit switches can be attached to any available DIO
+            # port.  They should have three wires, black for ground,
+            # red for power, and white for the input signal.  They'll
+            # read true/1/active/high when the switch is open,
+            # at least as reported via the DigitalInput.get() method,
+            # and the opposite when it's closed. In Shuffleboard,
+            # true is green, false is red.
+            DASH.putBoolean('DIO 4', self.dio4.get())
+            DASH.putBoolean('DIO 5', self.dio5.get())
 
             # When shown as a graph in ShuffleBoard, right is red (usually?)
             # and does show positive/higher than left when we're turning
@@ -360,7 +378,7 @@ class MyRobot(wpilib.TimedRobot):
 
         match self.driveMode:
             case Drive.ARCADE:
-                rate = (self.el.getRate() + self.er.getRate()) / 2
+                # rate = (self.el.getRate() + self.er.getRate()) / 2
                 speed = self.filter.calculate(self.speed)
                 # speed = self.pid.calculate(rate)
                 # True mean square inputs (higher sensitivity at low values)
@@ -396,11 +414,11 @@ class MyRobot(wpilib.TimedRobot):
             if elapsed1 >= 0.02:
                 print('updateDrive', elapsed1)
 
-            start = time.time()
-            stage = next(self.dash_gen)
-            elapsed2 = time.time() - start
-            if elapsed2 >= 0.02:
-                print('dash_gen', elapsed2, stage)
+        start = time.time()
+        stage = next(self.dash_gen)
+        elapsed2 = time.time() - start
+        if elapsed2 >= 0.02:
+            print('dash_gen', elapsed2, stage)
 
         self.ctrl.check()   # check if controllers have changed
 
