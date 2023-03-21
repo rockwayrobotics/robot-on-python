@@ -83,7 +83,7 @@ class Controllers:
         self.c0 = c
         self.robot.getX = c.getLeftX
         self.robot.getY = c.getLeftY
-        self.robot.getTop = c.getTop
+        self.robot.getTop = c.getAButton
         # self.robot.getTrigger = c.getTrigger
         self.robot.getPOV = c.getPOV
 
@@ -112,7 +112,7 @@ class Controllers:
         self.reset()
         name = self._name0.lower()
         if re.match(r'.*(xbox|xinput)', name):
-            self.switch_gamepad(wpilib.XboxController(0))
+            self.switch_xbox(wpilib.XboxController(0))
         elif re.match(r'wireless controller', name):
             self.switch_dualshock(wpilib.PS4Controller(0))
         elif self._name0:   # anything else connected?
@@ -245,6 +245,7 @@ class MyRobot(wpilib.TimedRobot):
         self.drive = DifferentialDrive(self.left, self.right)
         self.drive.setExpiration(0.1)
         self.drive.setSafetyEnabled(not self.sim)
+        self.drive.setDeadband(kDeadband)
 
         self.pov = False
 
@@ -424,6 +425,7 @@ class MyRobot(wpilib.TimedRobot):
         # does not "return" in the usual way, but can yield control at
         # various points, preserving its local state and resuming from where
         # it yielded the next time next() is called on it.
+        self.drive.setDeadband(0)
         self.phase = self.run_phases()
 
         # print(f'stick: {self.stick1.isConnected()}')
@@ -498,6 +500,7 @@ class MyRobot(wpilib.TimedRobot):
         #     DASH.putString("gameData", self.gameData)
 
         # print(f'stick: {self.stick1.isConnected()}')
+        self.drive.setDeadband(kDeadband)
 
 
     def teleopExit(self):
@@ -521,7 +524,7 @@ class MyRobot(wpilib.TimedRobot):
             if not self.pov:
                 self.pov = True
                 self.clear_inversion()
-                self.log.info('POV, clear inversion')
+                self.log.info(f'POV {pov}, clear inversion')
                 self.left.disable()
                 self.right.disable()
                 self.drive.setSafetyEnabled(False)

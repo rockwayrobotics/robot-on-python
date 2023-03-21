@@ -32,3 +32,6 @@ kSimStick = 1
 # <AxisType.kXAxis: 0>  negative left?
 # <AxisType.kYAxis: 1>  negative forward?
 # <AxisType.kZAxis: 2>  twist, on Logitech Extreme 3D Pro
+
+# used only in teleop, default in WPI is 0.02
+kDeadband = 0.02
