@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Experimental RobotPy for FRC 2023."""
+"""Experimental RobotPy for FRC 2024."""
 
 import asyncio
 from enum import Enum
@@ -18,7 +18,7 @@ from wpimath.filter import LinearFilter
 
 # Note: could move this below so we do it only in normal mode, allowing
 # tests/sim to run faster if they don't require this.
-import ctre
+import phoenix5 as ctre
 import rev
 
 from cli import CLI
@@ -267,7 +267,7 @@ class MyRobot(wpilib.TimedRobot):
 
         self.ds = wpilib.DSControlWord()
         # print('ds attached', self.ds.isDSAttached())
-        DASH.putString('git', DEPLOY_INFO.get('git-desc', 'missing'))
+        # DASH.putString('git', DEPLOY_INFO.get('git-desc', 'missing'))
 
         # rotation of the RIO, specified as:
         # 0 = X forward (Y left)
@@ -629,3 +629,4 @@ if __name__ == "__main__":
         sys.argv.remove('--break')
 
     wpilib.run(MyRobot)
+
