@@ -25,7 +25,7 @@ class MotorSubsystem(commands2.Subsystem):
         self.talon = ctre.TalonSRX(constants.CAN.TALON_MOTOR)
         self.spark = CANSparkMax(constants.CAN.SPARK_MOTOR, CANSparkMax.MotorType.kBrushless)
 
-        self.deadband = 0.03
+        self.deadband = 0.05
         self.max_speed = 1.0    # abs value
         self.scale = 1.0
 
@@ -115,7 +115,9 @@ class MotorSubsystem(commands2.Subsystem):
 
     # Set the motor speed using the Talon SRX
     def _setTalonSpeed(self, speed: float, force = False):
-        if not force:
+        if force:
+            self.talon_filter(speed)
+        else:
             speed = self.talon_filter.calculate(speed * self.scale)
 
             # clip to max magnitude
@@ -131,7 +133,9 @@ class MotorSubsystem(commands2.Subsystem):
 
     # Set the motor speed using the Spark MAX
     def _setSparkSpeed(self, speed: float, force = False):
-        if not force:
+        if force:
+            self.spark_filter(speed)
+        else:
             speed = self.spark_filter.calculate(speed * self.scale)
 
             # clip to max magnitude

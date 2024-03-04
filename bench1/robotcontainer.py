@@ -78,12 +78,19 @@ class RobotContainer:
             commands2.cmd.run(self.def_cmd, self.motors)
         )
 
-    def def_cmd(self):
-        val = self.hid.getRawAxis(5)
-        self.motors.set_talon_speed(val)
+    _def_cmd_count = 0
 
-        val = self.hid.getRawAxis(1)
-        self.motors.set_spark_speed(val)
+    def def_cmd(self):
+        ly = self.hid.getRawAxis(1)
+        self.motors.set_spark_speed(ly)
+
+        ry = self.hid.getRawAxis(5)
+        self.motors.set_talon_speed(ry)
+
+        self._def_cmd_count += 1
+        if self._def_cmd_count >= 50:
+            self._def_cmd_count = 0
+            print(f'spark={ly:.3f} talon={ry:.3f}')
 
 
     # Use this method to define your button->command mappings. Buttons can be created via the button

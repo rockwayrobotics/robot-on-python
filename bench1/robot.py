@@ -112,10 +112,10 @@ class MyRobot(wpilib.TimedRobot):
                 self.hid.getPOV(0),
                 )
 
-            if hid != self._hid_prev:
-                self._hid_prev = hid
-                c, ax0, ax1, ax2, ax3, ax4, ax5, bs, pov = hid
-                print(f'{c=:d} 0={ax0:+5.2f} 1={ax1:+5.2f} 2={ax2:+5.2f} 3={ax3:+5.2f} 4={ax4:+5.2f} 5={ax5:+5.2f} {bs=} {pov=}')
+            # if hid != self._hid_prev:
+            #     self._hid_prev = hid
+            #     c, ax0, ax1, ax2, ax3, ax4, ax5, bs, pov = hid
+            #     print(f'{c=:d} 0={ax0:+5.2f} 1={ax1:+5.2f} 2={ax2:+5.2f} 3={ax3:+5.2f} 4={ax4:+5.2f} 5={ax5:+5.2f} {bs=} {pov=}')
 
         if self._led_changed:
             self._led_changed = False
@@ -154,8 +154,8 @@ class MyRobot(wpilib.TimedRobot):
 
     def led_disabled(self):
         for i in range(0, constants.LED.length//2*2, 2):
-            self.ledData[i].setRGB(0, 0, 0)
-            self.ledData[i+1].setRGB(1, 1, 0)
+            self.ledData[i].setRGB(1, 1, 0)
+            self.ledData[i+1].setRGB(0, 0, 0)
         self._led_changed = True
 
     def led_auto(self):

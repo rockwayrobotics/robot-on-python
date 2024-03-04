@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ds = { path = "../ds-rs" }
+ds = { path = "../ds" }
 
 crossterm = "0.27.0"
 hidapi = { version = "2.6.1" }
