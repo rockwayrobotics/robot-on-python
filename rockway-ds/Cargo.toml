@@ -1,0 +1,16 @@
+[package]
+name = "rockway-ds"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+ds = { path = "../ds-rs" }
+
+crossterm = "0.27.0"
+hidapi = { version = "2.6.1" }
+log = "0.4.21"
+hex = "0.4.3"
+env_logger = "0.11.2"
+ratatui = "0.26.1"
