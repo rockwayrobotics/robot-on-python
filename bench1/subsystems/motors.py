@@ -9,10 +9,10 @@ import commands2.cmd
 import constants
 import wpilib
 import wpilib.drive
-import typing
+from wpimath.filter import SlewRateLimiter
 
 import phoenix5 as ctre
-import rev
+from rev import CANSparkMax
 # from ctre import TalonSRXControlMode
 
 import constants
@@ -23,10 +23,17 @@ class MotorSubsystem(commands2.Subsystem):
         super().__init__()
 
         self.talon = ctre.TalonSRX(constants.CAN.TALON_MOTOR)
-        # self.spark = rev.CANSparkMax(Constants.CAN.SPARK_MOTOR, MotorType.kBrushless)
+        self.spark = CANSparkMax(constants.CAN.SPARK_MOTOR, CANSparkMax.MotorType.kBrushless)
 
+        self.deadband = 0.03
         self.max_speed = 1.0    # abs value
-        self.speed = 0
+        self.scale = 1.0
+
+        self.talon_speed = 0
+        self.spark_speed = 0
+
+        self.talon_filter = SlewRateLimiter(1.0)
+        self.spark_filter = SlewRateLimiter(1.0)
 
         # # The robot's drive
         # self.drive = wpilib.drive.DifferentialDrive(self.left, self.right)
@@ -107,24 +114,65 @@ class MotorSubsystem(commands2.Subsystem):
     #     return commands2.cmd.runOnce(lambda: self.drive.setMaxOutput(max_output), self)
 
     # Set the motor speed using the Talon SRX
-    def _setTalonSpeed(self, speed: float):
+    def _setTalonSpeed(self, speed: float, force = False):
+        if not force:
+            speed = self.talon_filter.calculate(speed * self.scale)
+
+            # clip to max magnitude
+            if speed > self.max_speed:
+                speed = self.max_speed
+            elif speed < -self.max_speed:
+                speed = -self.max_speed
+
+            if abs(speed) < self.deadband:
+                speed = 0
+
         self.talon.set(ctre.TalonSRXControlMode.PercentOutput, speed)
 
     # Set the motor speed using the Spark MAX
-    # def setSparkSpeed(speed: float):
-    #     self.spark.set(speed)
+    def _setSparkSpeed(self, speed: float, force = False):
+        if not force:
+            speed = self.spark_filter.calculate(speed * self.scale)
 
-    def set_speed(self, speed):
-        self.speed = speed
+            # clip to max magnitude
+            if speed > self.max_speed:
+                speed = self.max_speed
+            elif speed < -self.max_speed:
+                speed = -self.max_speed
+
+            if abs(speed) < self.deadband:
+                speed = 0
+
+        self.spark.set(speed)
+
+
+    def set_talon_speed(self, speed):
+        if abs(speed - self.talon_speed) > 0.05:
+            print(f'set talon {speed:+5.2f}')
+            self.talon_speed = speed
+
+
+    def set_spark_speed(self, speed):
+        if abs(speed - self.spark_speed) > 0.05:
+            print(f'set spark {speed:+5.2f}')
+            self.spark_speed = speed
 
 
     def set_max_speed(self, speed):
         self.max_speed = speed
+        print(f'max speed {speed:+5.2f}')
+
+    def set_scale(self, speed):
+        self.scale = speed
+        print(f'scale {speed:+5.2f}')
 
 
     def setDriveStates(self, states, *args):
-        print(states)
-        self.set_speed(states.velocity)
+        # print(states)
+        self.set_talon_speed(states.velocity)
+
+    def resetEncoders(self):
+        pass
 
 
     def periodic(self):
@@ -132,14 +180,12 @@ class MotorSubsystem(commands2.Subsystem):
         # xValue = vX.get()
         motorOn = True
 
-        speed = self.speed
-        # clip to max magnitude
-        if speed > self.max_speed:
-            speed = self.max_speed
-        elif speed < -self.max_speed:
-            speed = -self.max_speed
+        if motorOn:
+            self._setTalonSpeed(self.talon_speed)
+        else:
+            self._setTalonSpeed(0, force=True)
 
         if motorOn:
-            self._setTalonSpeed(speed)
+            self._setSparkSpeed(self.spark_speed)
         else:
-            self._setTalonSpeed(0)
+            self._setTalonSpeed(0, force=True)

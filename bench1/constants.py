@@ -39,8 +39,8 @@ class Drive:
 
 # Constants for LEDs
 class LED:
-    LED_PWM = 0
-    LED_LENGTH = 30
+    port = 0
+    length = 60
 
 # enum modes:
 #     None,
